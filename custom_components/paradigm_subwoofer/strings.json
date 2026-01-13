@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Paradigm Subwoofer",
+        "description": "Enter the Bluetooth MAC address of your Paradigm subwoofer",
+        "data": {
+          "name": "Name",
+          "mac_address": "MAC Address"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the subwoofer",
+      "unknown": "Unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  }
+}

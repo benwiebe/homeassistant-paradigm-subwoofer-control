@@ -1,0 +1,50 @@
+[project]
+name = "homeassistant-paradigm-subwoofer-control"
+version = "0.1.0"
+description = "Home Assistant integration for Paradigm Bluetooth subwoofers"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "bwiebe"}
+]
+keywords = ["home-assistant", "paradigm", "subwoofer", "bluetooth"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "homeassistant>=2024.12.0",
+    "bleak>=0.21.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/bwiebe/homeassistant-paradigm-subwoofer-control"
+Issues = "https://github.com/bwiebe/homeassistant-paradigm-subwoofer-control/issues"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle
+    "F",  # pyflakes
+    "W",  # pycodestyle warnings
+    "I",  # isort
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components.paradigm_subwoofer"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

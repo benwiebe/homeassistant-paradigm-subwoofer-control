@@ -1,0 +1,7 @@
+{
+  "name": "Paradigm Subwoofer Control",
+  "render_readme": true,
+  "domains": ["number", "select"],
+  "homeassistant": "2025.12.0",
+  "iot_class": "Local Polling"
+}

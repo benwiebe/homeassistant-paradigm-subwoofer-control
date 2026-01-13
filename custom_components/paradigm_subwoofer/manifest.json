@@ -1,0 +1,11 @@
+{
+  "domain": "paradigm_subwoofer",
+  "name": "Paradigm Subwoofer Control",
+  "codeowners": ["@bwiebe"],
+  "config_flow": true,
+  "documentation": "https://github.com/bwiebe/homeassistant-paradigm-subwoofer-control",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "requirements": ["bleak>=0.21.0"],
+  "version": "0.1.0"
+}
