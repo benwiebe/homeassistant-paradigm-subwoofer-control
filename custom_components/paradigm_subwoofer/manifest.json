@@ -3,6 +3,17 @@
   "name": "Paradigm Subwoofer Control",
   "codeowners": ["@bwiebe"],
   "config_flow": true,
+  "bluetooth": [
+    {
+      "local_name": "Defiance*",
+      "service_uuid": "57fbe597-036d-63bb-6748-47e77bb26154"
+    },
+    {
+      "local_name": "Paradigm*",
+      "service_uuid": "57fbe597-036d-63bb-6748-47e77bb26154"
+    }
+  ],
+  "dependencies": ["bluetooth"],
   "documentation": "https://github.com/bwiebe/homeassistant-paradigm-subwoofer-control",
   "integration_type": "device",
   "iot_class": "local_polling",
