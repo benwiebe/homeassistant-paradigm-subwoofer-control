@@ -5,12 +5,13 @@ import logging
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_NAME, PERCENTAGE
+from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .client import ParadigmSubwooferClient
-from .const import CONF_MAC_ADDRESS, DOMAIN
+from .const import DOMAIN
+from .coordinator import ParadigmSubwooferCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,46 +22,39 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Paradigm Subwoofer number platform."""
-    name = config_entry.data[CONF_NAME]
-    mac_address = config_entry.data[CONF_MAC_ADDRESS]
-
-    client = ParadigmSubwooferClient(mac_address)
+    coordinator: ParadigmSubwooferCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
     async_add_entities(
         [
-            ParadigmSubwooferVolume(name, mac_address, config_entry.entry_id, client),
-            ParadigmSubwooferTrim(name, mac_address, config_entry.entry_id, client),
-            ParadigmSubwooferLowPassFilter(name, mac_address, config_entry.entry_id, client),
+            ParadigmSubwooferVolume(coordinator),
+            ParadigmSubwooferTrim(coordinator),
+            ParadigmSubwooferLowPassFilter(coordinator),
         ],
-        True,
     )
 
 
-class ParadigmSubwooferNumberBase(NumberEntity):
+class ParadigmSubwooferNumberBase(CoordinatorEntity, NumberEntity):
     """Base class for Paradigm Subwoofer number entities."""
 
     _attr_mode = NumberMode.SLIDER
 
     def __init__(
         self,
-        name: str,
-        mac_address: str,
-        entry_id: str,
+        coordinator: ParadigmSubwooferCoordinator,
         number_type: str,
-        client: ParadigmSubwooferClient,
+        name_suffix: str,
     ) -> None:
         """Initialize the number entity."""
-        self._base_name = name
-        self._mac_address = mac_address
+        super().__init__(coordinator)
         self._number_type = number_type
-        self._attr_unique_id = f"{mac_address}_{number_type}"
+        self._attr_unique_id = f"{coordinator.client._mac_address}_{number_type}"
+        self._attr_name = name_suffix
         self._attr_device_info = {
-            "identifiers": {(DOMAIN, mac_address)},
-            "name": name,
+            "identifiers": {(DOMAIN, coordinator.client._mac_address)},
+            "name": "Paradigm Subwoofer",
             "manufacturer": "Paradigm",
             "model": "Bluetooth Subwoofer",
         }
-        self._client = client
 
 
 class ParadigmSubwooferVolume(ParadigmSubwooferNumberBase):
@@ -72,37 +66,20 @@ class ParadigmSubwooferVolume(ParadigmSubwooferNumberBase):
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_icon = "mdi:volume-high"
 
-    def __init__(
-        self,
-        name: str,
-        mac_address: str,
-        entry_id: str,
-        client: ParadigmSubwooferClient,
-    ) -> None:
+    def __init__(self, coordinator: ParadigmSubwooferCoordinator) -> None:
         """Initialize the volume control."""
-        super().__init__(name, mac_address, entry_id, "volume", client)
-        self._attr_name = f"{name} Volume"
+        super().__init__(coordinator, "volume", "Volume")
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current value."""
+        return self.coordinator.data.get("volume")
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the volume level."""
-        try:
-            success = await self._client.set_volume(int(value))
-            if success:
-                self._attr_native_value = value
-            else:
-                _LOGGER.warning("Failed to set volume to %s", value)
-        except Exception as ex:
-            _LOGGER.error("Error setting volume: %s", ex)
-            raise
-
-    async def async_update(self) -> None:
-        """Update the current value."""
-        try:
-            volume = await self._client.get_volume()
-            if volume is not None:
-                self._attr_native_value = volume
-        except Exception as ex:
-            _LOGGER.debug("Error updating volume: %s", ex)
+        await self.coordinator.async_send_command(
+            self.coordinator.client.set_volume, int(value)
+        )
 
 
 class ParadigmSubwooferTrim(ParadigmSubwooferNumberBase):
@@ -114,37 +91,20 @@ class ParadigmSubwooferTrim(ParadigmSubwooferNumberBase):
     _attr_native_unit_of_measurement = "dB"
     _attr_icon = "mdi:tune"
 
-    def __init__(
-        self,
-        name: str,
-        mac_address: str,
-        entry_id: str,
-        client: ParadigmSubwooferClient,
-    ) -> None:
+    def __init__(self, coordinator: ParadigmSubwooferCoordinator) -> None:
         """Initialize the trim control."""
-        super().__init__(name, mac_address, entry_id, "trim", client)
-        self._attr_name = f"{name} Trim"
+        super().__init__(coordinator, "trim", "Trim")
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current value."""
+        return self.coordinator.data.get("trim")
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the trim level."""
-        try:
-            success = await self._client.set_trim(int(value))
-            if success:
-                self._attr_native_value = value
-            else:
-                _LOGGER.warning("Failed to set trim to %s", value)
-        except Exception as ex:
-            _LOGGER.error("Error setting trim: %s", ex)
-            raise
-
-    async def async_update(self) -> None:
-        """Update the current value."""
-        try:
-            trim = await self._client.get_trim()
-            if trim is not None:
-                self._attr_native_value = trim
-        except Exception as ex:
-            _LOGGER.debug("Error updating trim: %s", ex)
+        await self.coordinator.async_send_command(
+            self.coordinator.client.set_trim, int(value)
+        )
 
 
 class ParadigmSubwooferLowPassFilter(ParadigmSubwooferNumberBase):
@@ -156,34 +116,17 @@ class ParadigmSubwooferLowPassFilter(ParadigmSubwooferNumberBase):
     _attr_native_unit_of_measurement = "Hz"
     _attr_icon = "mdi:sine-wave"
 
-    def __init__(
-        self,
-        name: str,
-        mac_address: str,
-        entry_id: str,
-        client: ParadigmSubwooferClient,
-    ) -> None:
+    def __init__(self, coordinator: ParadigmSubwooferCoordinator) -> None:
         """Initialize the low pass filter control."""
-        super().__init__(name, mac_address, entry_id, "low_pass_filter", client)
-        self._attr_name = f"{name} Low Pass Filter"
+        super().__init__(coordinator, "low_pass_filter", "Low Pass Filter")
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the current value."""
+        return self.coordinator.data.get("low_pass_filter")
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the low pass filter frequency."""
-        try:
-            success = await self._client.set_low_pass_filter(int(value))
-            if success:
-                self._attr_native_value = value
-            else:
-                _LOGGER.warning("Failed to set low pass filter to %s Hz", value)
-        except Exception as ex:
-            _LOGGER.error("Error setting low pass filter: %s", ex)
-            raise
-
-    async def async_update(self) -> None:
-        """Update the current value."""
-        try:
-            lpf = await self._client.get_low_pass_filter()
-            if lpf is not None:
-                self._attr_native_value = lpf
-        except Exception as ex:
-            _LOGGER.debug("Error updating low pass filter: %s", ex)
+        await self.coordinator.async_send_command(
+            self.coordinator.client.set_low_pass_filter, int(value)
+        )
