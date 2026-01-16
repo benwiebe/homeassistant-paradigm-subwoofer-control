@@ -10,7 +10,9 @@ A Home Assistant custom integration for controlling Paradigm subwoofers via Blue
 - **Volume Control**: Adjust subwoofer volume (0-100%)
 - **Trim Control**: Fine-tune subwoofer level (-12dB to +12dB)
 - **Profile Selection**: Switch between Movie, Music, and Night modes
-- **Bluetooth Connectivity**: Direct BLE connection to your Paradigm subwoofer
+- **Phase & Polarity**: Fine-tune integration with your speakers (0°/180°, Normal/Inverted)
+- **Crossover**: Adjust Low Pass Filter frequency (40Hz-200Hz)
+- **Automatic Discovery**: Devices are automatically detected by Home Assistant
 
 ## Installation
 
@@ -33,19 +35,23 @@ A Home Assistant custom integration for controlling Paradigm subwoofers via Blue
 ## Configuration
 
 1. Go to **Settings** → **Devices & Services**
-2. Click **+ Add Integration**
-3. Search for **Paradigm Subwoofer Control**
-4. Enter your subwoofer's Bluetooth MAC address
-   - You can find this in your Bluetooth settings or using a BLE scanner app
-5. Give your subwoofer a name (optional)
+2. If your subwoofer is powered on, Home Assistant should automatically show a **Discovered** card for it.
+3. Click **Configure** on the discovered device.
+4. If it's not discovered automatically:
+   - Click **+ Add Integration**
+   - Search for **Paradigm Subwoofer Control**
+   - The integration will scan for nearby subwoofers for you to select.
 
 ## Usage
 
 After configuration, you'll have access to the following entities:
 
-- **Number Entity**: `[Name] Volume` - Control output volume (0-100%)
-- **Number Entity**: `[Name] Trim` - Adjust subwoofer trim (-12 to +12 dB)
-- **Select Entity**: `[Name] Profile` - Choose between Movie, Music, or Night modes
+- **Number**: `Volume` - Control output volume (0-100%)
+- **Number**: `Trim` - Adjust subwoofer trim (-12 to +12 dB)
+- **Number**: `Low Pass Filter` - Set crossover frequency (40-200 Hz)
+- **Select**: `Profile` - Choose between Movie, Music, or Night modes
+- **Select**: `Phase` - Toggle 0° or 180°
+- **Select**: `Polarity` - Normal or Inverted
 
 These can be controlled via:
 - Home Assistant UI
@@ -55,15 +61,18 @@ These can be controlled via:
 
 ## Development Status
 
-⚠️ **Note**: This integration is currently in development. The Bluetooth communication protocol needs to be implemented based on your specific Paradigm subwoofer model.
+This integration is based on reverse-engineered Bluetooth protocol captures from Paradigm Defiance series subwoofers. It uses ASCII-based commands over BLE.
 
 ### TODO
 
-- [ ] Implement actual Bluetooth GATT characteristics/services
-- [ ] Add connection state monitoring
-- [ ] Add error handling and retry logic
-- [ ] Test with actual Paradigm subwoofer hardware
-- [ ] Add support for additional settings (phase, crossover, etc.)
+- [x] Initial Bluetooth protocol reverse engineering
+- [x] Implementation of core Number and Select entities
+- [x] Automatic Bluetooth discovery
+- [ ] Implement Switch entity for Power control (`Z1POW` command)
+- [ ] Add Binary Sensor for connectivity status
+- [ ] Robust error handling for intermittent Bluetooth connections
+- [ ] Add unit tests with BLE mocking
+- [ ] Submit to HACS default repository
 
 ## Contributing
 
