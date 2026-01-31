@@ -24,11 +24,15 @@ class ParadigmSubwooferClient:
         self._mac_address = mac_address
         self._client: BleakClient | None = None
         self._response_data: str = ""
-        self._response_event: asyncio.Event = asyncio.Event()
+        self._response_event: asyncio.Event | None = None
 
     async def connect(self) -> None:
         """Connect to the subwoofer."""
         if self._client is None or not self._client.is_connected:
+            # Create event in async context
+            if self._response_event is None:
+                self._response_event = asyncio.Event()
+
             # Get the BLE device from Home Assistant's bluetooth integration
             # This is required for ESPHome bluetooth proxies
             ble_device = bluetooth.async_ble_device_from_address(
@@ -40,16 +44,19 @@ class ParadigmSubwooferClient:
                     "Make sure it's in range of a Bluetooth adapter or ESPHome proxy."
                 )
 
+            _LOGGER.debug("Establishing connection to %s via %s",
+                         self._mac_address, ble_device.name)
             self._client = await establish_connection(
                 BleakClient,
                 ble_device,
                 self._mac_address,
             )
+            _LOGGER.debug("Connection established, subscribing to notifications")
             # Subscribe to notifications
             await self._client.start_notify(
                 COMMUNICATION_CHARACTERISTIC_UUID, self._notification_handler
             )
-            _LOGGER.debug("Connected to Paradigm Subwoofer at %s", self._mac_address)
+            _LOGGER.info("Connected to Paradigm Subwoofer at %s", self._mac_address)
 
     async def disconnect(self) -> None:
         """Disconnect from the subwoofer."""
@@ -67,9 +74,10 @@ class ParadigmSubwooferClient:
         """Handle notifications from the subwoofer."""
         try:
             response = data.decode("ascii")
-            _LOGGER.debug("Received notification: %s", response)
+            _LOGGER.info("Received notification from sender %s: %s", sender, response)
             self._response_data = response
-            self._response_event.set()
+            if self._response_event:
+                self._response_event.set()
         except Exception as ex:
             _LOGGER.error("Error handling notification: %s", ex)
 
@@ -78,19 +86,24 @@ class ParadigmSubwooferClient:
         if not self._client or not self._client.is_connected:
             await self.connect()
 
+        if not self._response_event:
+            self._response_event = asyncio.Event()
+
         self._response_event.clear()
         self._response_data = ""
 
         # Send command
         command_bytes = command.encode("ascii")
+        _LOGGER.info("Sending command: %s (bytes: %s)", command, command_bytes)
         await self._client.write_gatt_char(
             COMMUNICATION_CHARACTERISTIC_UUID, command_bytes, response=False
         )
-        _LOGGER.debug("Sent command: %s", command)
+        _LOGGER.debug("Command written to characteristic, waiting for notification")
 
         # Wait for response with timeout
         try:
             await asyncio.wait_for(self._response_event.wait(), timeout=5.0)
+            _LOGGER.info("Received response: %s", self._response_data)
             return self._response_data
         except asyncio.TimeoutError:
             _LOGGER.warning("Timeout waiting for response to command: %s", command)
