@@ -6,6 +6,9 @@ import logging
 from typing import Any
 
 from bleak import BleakClient, BleakError
+from bleak_retry_connector import establish_connection
+from homeassistant.components import bluetooth
+from homeassistant.core import HomeAssistant
 
 from .const import COMMUNICATION_CHARACTERISTIC_UUID
 
@@ -15,8 +18,9 @@ _LOGGER = logging.getLogger(__name__)
 class ParadigmSubwooferClient:
     """Client for communicating with Paradigm Subwoofer via Bluetooth."""
 
-    def __init__(self, mac_address: str) -> None:
+    def __init__(self, hass: HomeAssistant, mac_address: str) -> None:
         """Initialize the client."""
+        self._hass = hass
         self._mac_address = mac_address
         self._client: BleakClient | None = None
         self._response_data: str = ""
@@ -25,8 +29,22 @@ class ParadigmSubwooferClient:
     async def connect(self) -> None:
         """Connect to the subwoofer."""
         if self._client is None or not self._client.is_connected:
-            self._client = BleakClient(self._mac_address)
-            await self._client.connect()
+            # Get the BLE device from Home Assistant's bluetooth integration
+            # This is required for ESPHome bluetooth proxies
+            ble_device = bluetooth.async_ble_device_from_address(
+                self._hass, self._mac_address, connectable=True
+            )
+            if not ble_device:
+                raise BleakError(
+                    f"Device {self._mac_address} not found. "
+                    "Make sure it's in range of a Bluetooth adapter or ESPHome proxy."
+                )
+
+            self._client = await establish_connection(
+                BleakClient,
+                ble_device,
+                self._mac_address,
+            )
             # Subscribe to notifications
             await self._client.start_notify(
                 COMMUNICATION_CHARACTERISTIC_UUID, self._notification_handler

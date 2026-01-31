@@ -21,7 +21,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     mac_address = entry.data[CONF_MAC_ADDRESS]
 
     # Create client
-    client = ParadigmSubwooferClient(mac_address)
+    client = ParadigmSubwooferClient(hass, mac_address)
 
     # Create coordinator without automatic updates (on-demand only)
     coordinator = ParadigmSubwooferCoordinator(
