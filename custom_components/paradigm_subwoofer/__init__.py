@@ -30,8 +30,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         update_interval=None,
     )
 
-    # Fetch initial data
-    await coordinator.async_config_entry_first_refresh()
+    # Try to fetch initial data, but don't fail setup if device is unavailable
+    # This allows the integration to load even when the subwoofer is powered off
+    try:
+        await coordinator.async_refresh()
+    except Exception as err:
+        _LOGGER.info(
+            "Could not connect to subwoofer during setup (device may be powered off): %s",
+            err,
+        )
 
     # Store coordinator in hass.data
     hass.data.setdefault(DOMAIN, {})

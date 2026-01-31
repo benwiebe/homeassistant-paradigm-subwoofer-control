@@ -80,7 +80,9 @@ class ParadigmSubwooferVolume(ParadigmSubwooferNumberBase):
     @property
     def native_value(self) -> float | None:
         """Return the current value."""
-        return self.coordinator.data.get("volume")
+        if self.coordinator.data:
+            return self.coordinator.data.get("volume")
+        return None
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the volume level."""
@@ -105,7 +107,9 @@ class ParadigmSubwooferTrim(ParadigmSubwooferNumberBase):
     @property
     def native_value(self) -> float | None:
         """Return the current value."""
-        return self.coordinator.data.get("trim")
+        if self.coordinator.data:
+            return self.coordinator.data.get("trim")
+        return None
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the trim level."""
@@ -130,7 +134,9 @@ class ParadigmSubwooferLowPassFilter(ParadigmSubwooferNumberBase):
     @property
     def native_value(self) -> float | None:
         """Return the current value."""
-        return self.coordinator.data.get("low_pass_filter")
+        if self.coordinator.data:
+            return self.coordinator.data.get("low_pass_filter")
+        return None
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the low pass filter frequency."""

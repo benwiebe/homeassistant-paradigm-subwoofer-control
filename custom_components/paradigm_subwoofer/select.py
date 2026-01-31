@@ -64,7 +64,9 @@ class ParadigmSubwooferProfile(ParadigmSubwooferSelectBase):
     @property
     def current_option(self) -> str | None:
         """Return the current option."""
-        return self.coordinator.data.get("profile")
+        if self.coordinator.data:
+            return self.coordinator.data.get("profile")
+        return None
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected profile."""
@@ -100,9 +102,10 @@ class ParadigmSubwooferPhase(ParadigmSubwooferSelectBase):
     @property
     def current_option(self) -> str | None:
         """Return the current option."""
-        phase = self.coordinator.data.get("phase")
-        if phase is not None:
-            return "0°" if phase == 0 else "180°"
+        if self.coordinator.data:
+            phase = self.coordinator.data.get("phase")
+            if phase is not None:
+                return "0°" if phase == 0 else "180°"
         return None
 
     async def async_select_option(self, option: str) -> None:
@@ -134,9 +137,10 @@ class ParadigmSubwooferPolarity(ParadigmSubwooferSelectBase):
     @property
     def current_option(self) -> str | None:
         """Return the current option."""
-        polarity = self.coordinator.data.get("polarity")
-        if polarity is not None:
-            return "Normal" if polarity == 0 else "Inverted"
+        if self.coordinator.data:
+            polarity = self.coordinator.data.get("polarity")
+            if polarity is not None:
+                return "Normal" if polarity == 0 else "Inverted"
         return None
 
     async def async_select_option(self, option: str) -> None:
