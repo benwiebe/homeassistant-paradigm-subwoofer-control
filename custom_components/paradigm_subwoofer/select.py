@@ -32,7 +32,18 @@ async def async_setup_entry(
     )
 
 
-class ParadigmSubwooferProfile(CoordinatorEntity, SelectEntity):
+class ParadigmSubwooferSelectBase(CoordinatorEntity, SelectEntity):
+    """Base class for Paradigm Subwoofer select entities."""
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        # Always available - the device might be on even if we don't have recent data
+        # Setting values will trigger a connection attempt
+        return True
+
+
+class ParadigmSubwooferProfile(ParadigmSubwooferSelectBase):
     """Representation of Paradigm Subwoofer profile selection."""
 
     _attr_icon = "mdi:tune-variant"
@@ -68,7 +79,7 @@ class ParadigmSubwooferProfile(CoordinatorEntity, SelectEntity):
             )
 
 
-class ParadigmSubwooferPhase(CoordinatorEntity, SelectEntity):
+class ParadigmSubwooferPhase(ParadigmSubwooferSelectBase):
     """Representation of Paradigm Subwoofer phase selection."""
 
     _attr_icon = "mdi:sine-wave"
@@ -102,7 +113,7 @@ class ParadigmSubwooferPhase(CoordinatorEntity, SelectEntity):
         )
 
 
-class ParadigmSubwooferPolarity(CoordinatorEntity, SelectEntity):
+class ParadigmSubwooferPolarity(ParadigmSubwooferSelectBase):
     """Representation of Paradigm Subwoofer polarity selection."""
 
     _attr_icon = "mdi:plus-minus"

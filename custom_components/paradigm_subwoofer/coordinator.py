@@ -38,8 +38,11 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from the subwoofer."""
         try:
+            _LOGGER.debug("Starting data update")
+
             # Ensure we're connected
             if not self.client.is_connected:
+                _LOGGER.debug("Connecting to subwoofer")
                 await self.client.connect()
 
             # Query all values
@@ -48,33 +51,41 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
             volume = await self.client.get_volume()
             if volume is not None:
                 data["volume"] = volume
+                _LOGGER.debug("Volume: %s", volume)
 
             trim = await self.client.get_trim()
             if trim is not None:
                 data["trim"] = trim
+                _LOGGER.debug("Trim: %s", trim)
 
             lpf = await self.client.get_low_pass_filter()
             if lpf is not None:
                 data["low_pass_filter"] = lpf
+                _LOGGER.debug("Low pass filter: %s", lpf)
 
             lmd = await self.client.get_listening_mode()
             if lmd and lmd in LMD_TO_PROFILE:
                 data["profile"] = LMD_TO_PROFILE[lmd]
+                _LOGGER.debug("Profile: %s", data["profile"])
 
             phase = await self.client.get_phase()
             if phase is not None:
                 data["phase"] = phase
+                _LOGGER.debug("Phase: %s", phase)
 
             polarity = await self.client.get_polarity()
             if polarity is not None:
                 data["polarity"] = polarity
+                _LOGGER.debug("Polarity: %s", polarity)
 
             # Disconnect immediately after fetching data
+            _LOGGER.debug("Disconnecting from subwoofer")
             await self.client.disconnect()
 
             # Reset failure counter on success
             self._consecutive_failures = 0
 
+            _LOGGER.debug("Data update complete: %s", data)
             return data
 
         except BleakError as err:
@@ -109,17 +120,24 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
     ) -> Any:
         """Send a command to the subwoofer and handle connection management."""
         try:
+            _LOGGER.debug("Sending command: %s with args=%s, kwargs=%s",
+                         command_func.__name__, args, kwargs)
+
             # Ensure we're connected
             if not self.client.is_connected:
+                _LOGGER.debug("Connecting to send command")
                 await self.client.connect()
 
             # Execute the command
             result = await command_func(*args, **kwargs)
+            _LOGGER.debug("Command %s executed successfully, result: %s",
+                         command_func.__name__, result)
 
             # Reset failure counter on successful command
             self._consecutive_failures = 0
 
             # Refresh data after command
+            _LOGGER.debug("Refreshing data after command")
             await self.async_request_refresh()
 
             return result

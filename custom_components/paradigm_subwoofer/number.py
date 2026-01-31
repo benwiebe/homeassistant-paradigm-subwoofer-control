@@ -56,6 +56,13 @@ class ParadigmSubwooferNumberBase(CoordinatorEntity, NumberEntity):
             "model": "Bluetooth Subwoofer",
         }
 
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        # Always available - the device might be on even if we don't have recent data
+        # Setting values will trigger a connection attempt
+        return True
+
 
 class ParadigmSubwooferVolume(ParadigmSubwooferNumberBase):
     """Representation of Paradigm Subwoofer volume control."""
