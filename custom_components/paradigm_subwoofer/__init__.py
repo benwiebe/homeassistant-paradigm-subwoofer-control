@@ -1,7 +1,6 @@
 """The Paradigm Subwoofer Control integration."""
 from __future__ import annotations
 
-from datetime import timedelta
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -9,7 +8,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .client import ParadigmSubwooferClient
-from .const import CONF_MAC_ADDRESS, DOMAIN, SCAN_INTERVAL
+from .const import CONF_MAC_ADDRESS, DOMAIN
 from .coordinator import ParadigmSubwooferCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,11 +23,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Create client
     client = ParadigmSubwooferClient(mac_address)
 
-    # Create coordinator with 60 second update interval
+    # Create coordinator without automatic updates (on-demand only)
     coordinator = ParadigmSubwooferCoordinator(
         hass,
         client,
-        update_interval=timedelta(seconds=SCAN_INTERVAL),
+        update_interval=None,
     )
 
     # Fetch initial data

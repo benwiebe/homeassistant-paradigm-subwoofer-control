@@ -1,7 +1,6 @@
 """Data coordinator for Paradigm Subwoofer Control integration."""
 from __future__ import annotations
 
-import asyncio
 from datetime import timedelta
 import logging
 from typing import Any
@@ -16,8 +15,6 @@ from .const import DOMAIN, LMD_TO_PROFILE
 
 _LOGGER = logging.getLogger(__name__)
 
-IDLE_DISCONNECT_TIMEOUT = 30  # seconds
-
 
 class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
     """Coordinator to manage Paradigm Subwoofer data updates."""
@@ -26,7 +23,7 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
         self,
         hass: HomeAssistant,
         client: ParadigmSubwooferClient,
-        update_interval: timedelta,
+        update_interval: timedelta | None,
     ) -> None:
         """Initialize the coordinator."""
         super().__init__(
@@ -36,16 +33,11 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
             update_interval=update_interval,
         )
         self.client = client
-        self._disconnect_task: asyncio.Task | None = None
-        self._last_activity = asyncio.get_event_loop().time()
         self._consecutive_failures = 0
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from the subwoofer."""
         try:
-            # Cancel any pending disconnect
-            self._cancel_disconnect_timer()
-
             # Ensure we're connected
             if not self.client.is_connected:
                 await self.client.connect()
@@ -77,8 +69,8 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
             if polarity is not None:
                 data["polarity"] = polarity
 
-            # Schedule disconnect after idle timeout
-            self._schedule_disconnect()
+            # Disconnect immediately after fetching data
+            await self.client.disconnect()
 
             # Reset failure counter on success
             self._consecutive_failures = 0
@@ -117,21 +109,12 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
     ) -> Any:
         """Send a command to the subwoofer and handle connection management."""
         try:
-            # Cancel any pending disconnect
-            self._cancel_disconnect_timer()
-
             # Ensure we're connected
             if not self.client.is_connected:
                 await self.client.connect()
 
             # Execute the command
             result = await command_func(*args, **kwargs)
-
-            # Update last activity time
-            self._last_activity = asyncio.get_event_loop().time()
-
-            # Schedule disconnect after idle timeout
-            self._schedule_disconnect()
 
             # Reset failure counter on successful command
             self._consecutive_failures = 0
@@ -151,32 +134,7 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
             await self.client.disconnect()
             raise
 
-    def _cancel_disconnect_timer(self) -> None:
-        """Cancel the pending disconnect timer."""
-        if self._disconnect_task and not self._disconnect_task.done():
-            self._disconnect_task.cancel()
-            self._disconnect_task = None
-
-    def _schedule_disconnect(self) -> None:
-        """Schedule a disconnect after idle timeout."""
-        self._cancel_disconnect_timer()
-        self._disconnect_task = asyncio.create_task(self._disconnect_after_timeout())
-
-    async def _disconnect_after_timeout(self) -> None:
-        """Disconnect after the idle timeout period."""
-        try:
-            await asyncio.sleep(IDLE_DISCONNECT_TIMEOUT)
-            if self.client.is_connected:
-                _LOGGER.debug("Disconnecting due to idle timeout")
-                await self.client.disconnect()
-        except asyncio.CancelledError:
-            # Timer was cancelled, another command came in
-            pass
-        except Exception as err:
-            _LOGGER.error("Error during idle disconnect: %s", err)
-
     async def async_shutdown(self) -> None:
         """Shutdown the coordinator and disconnect."""
-        self._cancel_disconnect_timer()
         if self.client.is_connected:
             await self.client.disconnect()
