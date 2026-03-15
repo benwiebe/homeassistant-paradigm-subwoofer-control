@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -23,11 +24,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Create client
     client = ParadigmSubwooferClient(hass, mac_address)
 
-    # Create coordinator without automatic updates (on-demand only)
+    # Create coordinator with automatic updates
     coordinator = ParadigmSubwooferCoordinator(
         hass,
         client,
-        update_interval=None,
+        update_interval=timedelta(seconds=60),
     )
 
     # Try to fetch initial data, but don't fail setup if device is unavailable

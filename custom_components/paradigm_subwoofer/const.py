@@ -30,9 +30,10 @@ PROFILE_NIGHT = "night"
 PROFILES = [PROFILE_MOVIE, PROFILE_MUSIC, PROFILE_NIGHT]
 
 # Profile mapping to LMD command values
+# Verified against manufacturer app: LMD0=Music, LMD1=Movie, LMD2=Night
 PROFILE_TO_LMD = {
-    PROFILE_MOVIE: "0",
-    PROFILE_MUSIC: "1",
+    PROFILE_MUSIC: "0",
+    PROFILE_MOVIE: "1",
     PROFILE_NIGHT: "2",
 }
 

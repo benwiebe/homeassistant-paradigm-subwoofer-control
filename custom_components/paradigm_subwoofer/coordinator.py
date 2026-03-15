@@ -78,9 +78,11 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
                 data["polarity"] = polarity
                 _LOGGER.debug("Polarity: %s", polarity)
 
-            # Disconnect immediately after fetching data
-            _LOGGER.debug("Disconnecting from subwoofer")
-            await self.client.disconnect()
+            # Auto-disconnect is now handled by the client's inactivity timer.
+            # This ensures the connection is kept alive for overlapping requests
+            # but still closed after a short period of idle time.
+            # _LOGGER.debug("Disconnecting from subwoofer")
+            # await self.client.disconnect()
 
             # Reset failure counter on success
             self._consecutive_failures = 0
@@ -96,7 +98,7 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
             # Only log as warning for first few failures, then debug to avoid spam
             if self._consecutive_failures <= 3:
                 _LOGGER.warning(
-                    "Cannot connect to subwoofer (device may be powered off): %s", err
+                    "Cannot connect to subwoofer (device may be powered off or out of range): %s", err
                 )
             else:
                 _LOGGER.debug(
@@ -105,7 +107,7 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
                     err,
                 )
             raise UpdateFailed(
-                f"Device unavailable (likely powered off)"
+                f"Device unavailable (likely powered off or out of range)"
             ) from err
 
         except Exception as err:
@@ -143,7 +145,7 @@ class ParadigmSubwooferCoordinator(DataUpdateCoordinator):
             return result
 
         except BleakError as err:
-            _LOGGER.warning("Cannot send command (device may be powered off): %s", err)
+            _LOGGER.warning("Cannot send command (device may be powered off or out of range): %s", err)
             await self.client.disconnect()
             raise
 
