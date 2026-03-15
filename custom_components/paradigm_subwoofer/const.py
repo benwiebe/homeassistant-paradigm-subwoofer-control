@@ -22,10 +22,10 @@ CMD_DEVICE_NAME = "IDF"
 CMD_SERIAL_NUMBER = "IDN"
 CMD_FIRMWARE_VERSION = "IDS"
 
-# Profiles (LMD values)
-PROFILE_MOVIE = "movie"
-PROFILE_MUSIC = "music"
-PROFILE_NIGHT = "night"
+# Profiles (LMD values) — these are the display names shown in HA
+PROFILE_MOVIE = "Movie"
+PROFILE_MUSIC = "Music"
+PROFILE_NIGHT = "Night"
 
 PROFILES = [PROFILE_MOVIE, PROFILE_MUSIC, PROFILE_NIGHT]
 

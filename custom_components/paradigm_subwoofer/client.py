@@ -214,19 +214,13 @@ class ParadigmSubwooferClient:
         return actual_value == str(value)
 
     async def get_volume(self) -> int | None:
-        """Get current volume (0-100).
-
-        The device reports values 1-101 internally; subtract 1 to map to 0-100.
-        """
+        """Get current volume (0-100)."""
         value = await self.query("VOL")
-        return int(value) - 1 if value and value.isdigit() else None
+        return int(value) if value and value.isdigit() else None
 
     async def set_volume(self, volume: int) -> bool:
-        """Set volume (0-100).
-
-        The device uses 1-101 internally; add 1 to convert from 0-100.
-        """
-        return await self.set_value("VOL", volume + 1)
+        """Set volume (0-100)."""
+        return await self.set_value("VOL", volume)
 
     async def get_trim(self) -> int | None:
         """Get current trim/subwoofer level."""
